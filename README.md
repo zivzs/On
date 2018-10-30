@@ -4,23 +4,34 @@
 On is simple client that help build reactive micro-services architechture on top of queues.
 Currently, supporting Java only, but will support many other popular languages.
 
-On provides a way for a developer to define reactors using simple POJOs and simple conditions syntax.
+On provides a simple way to react to queued events. We call a call that defines methods on how to treat each event as a Reactor. 
 
 ``` java
- @On("payment.processed == false")
- public void processPayment(Payment payment) {
-    // Do something with the payment
-    payment.processed = true;
-    On.post(payment);
+ public class MyReactor {
     
-    //Produce and send receipt
-    Reciept receipt = ...;
-    On.post(receipt);
-}
+    @On("payment.processed == false")
+    public void processPayment(Payment payment) {
+        // Do something with the payment
+        payment.processed = true;
+    }
+ }
+```
+
+In addition to reacting to events, On provides a simple way to broadcast events
+``` java
+ public class PaymentService {
+    private On on;    
+    
+    public void publishNewPayment(Payment payment) {
+        payment.processed = false;
+        on.broadcast(payment);
+    }
+ }
 ```
 
 ## How On works
-It uses your reactors, the files with the @On annotation, to setup a listener on the queue behind  the scenes.
+Behind the scenes On will use the ```@On``` annotations to define out-of-the-box serilizer/de-serilizer for the event classes. Based on the different queue it connects to it will generate implementation of the queue listener.
+
 The default queue is an Apache Kafka. But it can be extended to any other queue like RabbitMQ, ApacheMQ, etc...
 ## Adding On to your build
 
@@ -60,11 +71,14 @@ dependencies {
 
 ``` java
 public class MyReactor {
+ 
+ 
+ 
  @On("payment.processed == false")
  public void processPayment(Payment payment) {
     // Do something with the payment
     payment.processed = true;
-    On.post(payment);
+    on.post(payment);
     
     //Produce and send receipt
     Reciept receipt = ...;
